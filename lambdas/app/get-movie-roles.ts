@@ -4,6 +4,7 @@ import {
   actorKey,
   ddb,
   isRoleItem,
+  isMovieItem,
   movieKey,
   parseId,
   tableName,
@@ -27,8 +28,19 @@ export const handler = async (
   if(actorParam !== undefined && actorId === undefined){
     return response(400, {message: "actor must be a positive integer" });
   }
-  
+
   try {
+    if(actorId !== undefined) {
+      const roleResult = await ddb.send(
+        new GetCommand({
+          TableName: tableName,
+          Key: {PK: movieKey(movieId), SK: actorKey(actorId) },
+        })
+      )
+
+    const role = roleResult.Item;
+    return response(200, { data: role ? [toRole(role)] : []});
+  }
     const queryResult = await ddb.send(
       new QueryCommand({
         TableName: tableName,
@@ -39,12 +51,14 @@ export const handler = async (
     );
 
     const resultItems = queryResult.Items ?? [];
+    if (!resultItems.some(isMovieItem)){
+      return response(404, { message: `Movie ${movieId} not found`});
+    }
     return response(200, { data: resultItems.filter(isRoleItem).map(toRole) });
   } catch (err) {
     console.error("DynamoDB error:", err);
     return response(500, {
-      message: "Internal server error",
-      error: err,
+      message: "Internal server error"
     });
   }
 };
