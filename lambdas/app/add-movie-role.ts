@@ -17,13 +17,48 @@ export const handler = async (
   };
 
   try {
-    //  TOD∏O - Add role if its IDs are valid
+    await ddb.send(
+      new TransactWriteCommand({
+        TransactItems: [
+          {
+            ConditionCheck: {
+              TableName: tableName,
+              Key: {
+                PK: movieKey(role.movieId),
+                SK: movieKey(role.movieId),
+              },
+              ConditionExpression: "attribute_exists(pk)",
+            },
+          },
+          {
+            ConditionCheck: {
+              TableName: tableName,
+              Key: {
+                PK: actorKey(role.actorId),
+                SK: actorKey(role.actorId),
+              },
+              ConditionExpression: "attribute_exists(PK)",
+            },
+          },
+          {
+            Put: {
+              TableName: tableName,
+              Item: {
+                PK: movieKey(role.movieId),
+                SK: actorKey(role.actorId),
+                ...role,
+              },
+              ConditionExpression: "attribute_not_exists(PK)",
+            }
+          }
+        ]
+      })
+    )
     return response(201, { message: "Role added", data: role });
   } catch (err) {
     console.error("DynamoDB error:", err);
     return response(500, {
-      message: "Internal server error",
-      error: err,
+      message: "Internal server error"
     });
   }
 };
