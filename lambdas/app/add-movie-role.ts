@@ -49,7 +49,7 @@ export const handler = async (
                 PK: movieKey(role.movieId),
                 SK: movieKey(role.movieId),
               },
-              ConditionExpression: "attribute_exists(pk)",
+              ConditionExpression: "attribute_exists(PK)",
             },
           },
           {
